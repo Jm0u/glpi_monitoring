@@ -75,6 +75,7 @@ class PluginMonitoringServicescatalog extends CommonDropdown {
       $ong = array();
       $this->addStandardTab('PluginMonitoringBusinessrulegroup', $ong, $options);
       $this->addStandardTab("PluginMonitoringServicescatalog", $ong, $options);
+	  $this->addStandardTab('Document_Item', $ong, $options);
 
       return $ong;
    }
