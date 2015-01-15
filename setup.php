@@ -3,7 +3,7 @@
 /*
    ------------------------------------------------------------------------
    Plugin Monitoring for GLPI
-   Copyright (C) 2011-2013 by the Plugin Monitoring for GLPI Development Team.
+   Copyright (C) 2011-2014 by the Plugin Monitoring for GLPI Development Team.
 
    https://forge.indepnet.net/projects/monitoring/
    ------------------------------------------------------------------------
@@ -29,34 +29,33 @@
 
    @package   Plugin Monitoring for GLPI
    @author    David Durieux
-   @co-author 
-   @comment   
-   @copyright Copyright (c) 2011-2013 Plugin Monitoring for GLPI team
+   @co-author
+   @comment
+   @copyright Copyright (c) 2011-2014 Plugin Monitoring for GLPI team
    @license   AGPL License 3.0 or (at your option) any later version
               http://www.gnu.org/licenses/agpl-3.0-standalone.html
    @link      https://forge.indepnet.net/projects/monitoring/
    @since     2011
- 
+
    ------------------------------------------------------------------------
  */
 
-define ("PLUGIN_MONITORING_VERSION","0.84+1.3");
+define ("PLUGIN_MONITORING_VERSION","0.84+1.3g");
 
 define('_MPDF_TEMP_PATH', GLPI_PLUGIN_DOC_DIR.'/monitoring/pdf/');
 
 // Init the hooks of monitoring
 function plugin_init_monitoring() {
    global $PLUGIN_HOOKS;
-   
+
    $PLUGIN_HOOKS['csrf_compliant']['monitoring'] = true;
-   
+
    $PLUGIN_HOOKS['change_profile']['monitoring'] = array('PluginMonitoringProfile','changeprofile');
-   
+
    $Plugin = new Plugin();
    if ($Plugin->isActivated('monitoring')) {
 //      if (isset($_SESSION["glpiID"])) {
 //         Plugin::loadLang("monitoring");
-         
 
          Plugin::registerClass('PluginMonitoringEntity',
               array('addtabon' => array('Entity')));
@@ -72,16 +71,36 @@ function plugin_init_monitoring() {
               array('addtabon' => array('Central')));
          Plugin::registerClass('PluginMonitoringHost',
               array('addtabon' => array('Central', 'Computer', 'Device', 'Printer', 'NetworkEquipment')));
+         Plugin::registerClass('PluginMonitoringService',
+              array('addtabon' => array('Central')));
          Plugin::registerClass('PluginMonitoringProfile',
               array('addtabon' => array('Profile')));
+         Plugin::registerClass('PluginMonitoringSecurity');
          Plugin::registerClass('PluginMonitoringServicescatalog',
               array('addtabon' => array('Central')));
-         Plugin::registerClass('PluginMonitoringUnavailability');
+         Plugin::registerClass('PluginMonitoringUnavailability',
+              array('addtabon' => array('Computer', 'NetworkEquipment')));
          Plugin::registerClass('PluginMonitoringSystem',
               array('addtabon' => array('Central')));
-         
-         
-         
+         Plugin::registerClass('PluginMonitoringDowntime',
+              array('addtabon' => array('Computer', 'Ticket')));
+         Plugin::registerClass('PluginMonitoringAcknowledge');
+         Plugin::registerClass('PluginMonitoringHostdailycounter',
+              array('addtabon' => array('Computer')));
+         Plugin::registerClass('PluginMonitoringServiceevent',
+              array('addtabon' => array('Computer')));
+         Plugin::registerClass('PluginMonitoringHostCounter');
+
+		if (class_exists('PluginAppliancesAppliance')) {
+           PluginAppliancesAppliance::registerType('PluginMonitoringServicescatalog');
+        }
+		 
+		 
+         include_once GLPI_ROOT.'/plugins/monitoring/inc/security.class.php';
+         $pmSecurity = new PluginMonitoringSecurity();
+         $pmSecurity->updateSecurity();
+
+
          $PLUGIN_HOOKS['use_massive_action']['monitoring']=1;
          $PLUGIN_HOOKS['add_css']['monitoring']="css/views.css";
          $PLUGIN_HOOKS['add_javascript']['monitoring'] = array(
@@ -89,21 +108,21 @@ function plugin_init_monitoring() {
              "lib/jquery/js/jquery-1.8.3.js",
              "lib/jqueryplugins/jquery-tagbox/js/jquery.tagbox.js"
              );
-         
+
          $plugin = new Plugin();
          if ($plugin->isActivated('monitoring')
                  AND isset($_SESSION['glpi_plugin_monitoring_profile'])) {
-            
+
             $PLUGIN_HOOKS['menu_entry']['monitoring'] = true;
          }
 
          $PLUGIN_HOOKS['config_page']['monitoring'] = 'front/config.form.php';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['config'] = 'front/config.form.php';
-         
+
          // Tabs for each type
          $PLUGIN_HOOKS['headings']['monitoring'] = 'plugin_get_headings_monitoring';
          $PLUGIN_HOOKS['headings_action']['monitoring'] = 'plugin_headings_actions_monitoring';
-         
+
          // Icons add, search...
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['command'] = 'front/command.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['command'] = 'front/command.php';
@@ -116,22 +135,22 @@ function plugin_init_monitoring() {
 
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['servicescatalog'] = 'front/servicescatalog.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['servicescatalog'] = 'front/servicescatalog.php';
-         
+
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['components'] = 'front/component.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['components'] = 'front/component.php';
-         
+
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['contacttemplates'] = 'front/contacttemplate.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['contacttemplates'] = 'front/contacttemplate.php';
-         
+
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['displayview'] = 'front/displayview.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['displayview'] = 'front/displayview.php';
-         
+
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['PluginMonitoringRealm'] = 'front/realm.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['PluginMonitoringRealm'] = 'front/realm.php';
 
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['weathermap'] = 'front/weathermap.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['weathermap'] = 'front/weathermap.php';
-         
+
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['eventhandler'] = 'front/eventhandler.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['eventhandler'] = 'front/eventhandler.php';
 
@@ -140,12 +159,21 @@ function plugin_init_monitoring() {
 
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['perfdata'] = 'front/perfdata.form.php?add=1';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['perfdata'] = 'front/perfdata.php';
-         
+
+         $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['customitem_gauge'] = 'front/customitem_gauge.form.php?add=1';
+         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_gauge'] = 'front/customitem_gauge.php';
+
+         $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['customitem_counter'] = 'front/customitem_counter.form.php?add=1';
+         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['customitem_counter'] = 'front/customitem_counter.php';
+
+         $PLUGIN_HOOKS['submenu_entry']['monitoring']['add']['slider'] = 'front/slider.form.php?add=1';
+         $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['slider'] = 'front/slider.php';
+
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/display.php';
          $PLUGIN_HOOKS['submenu_entry']['monitoring']['search']['service'] = 'front/host.php';
-         
+
          if (isset($_SESSION["glpiname"])) {
-         
+
             // Fil ariane
             $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['check']['title'] = __('Check definition', 'monitoring');
             $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['check']['page']  = '/plugins/monitoring/front/check.php';
@@ -182,10 +210,31 @@ function plugin_init_monitoring() {
 
             $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['notificationcommand']['title'] = __('Notification commands', 'monitoring');
             $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['notificationcommand']['page']  = '/plugins/monitoring/front/notificationcommand.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['hostdailycounter']['title'] = __('Host daily counters', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['hostdailycounter']['page']  = '/plugins/monitoring/front/hostdailycounter.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['unavailability']['title'] = __('Unavailabilities', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['unavailability']['page']  = '/plugins/monitoring/front/unavailability.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['downtime']['title'] = __('Downtimes', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['downtime']['page']  = '/plugins/monitoring/front/downtime.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['acknowledge']['title'] = __('Acknowledges', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['acknowledge']['page']  = '/plugins/monitoring/front/acknowledge.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['perfdata']['title'] = __('Graph templates', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['perfdata']['page']  = '/plugins/monitoring/front/perfdata.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['slider']['title'] = __('Carrousel / slider', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['slider']['page']  = '/plugins/monitoring/front/slider.php';
+
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['dashboard']['title'] = __('Dashboard', 'monitoring');
+            $PLUGIN_HOOKS['submenu_entry']['monitoring']['options']['dashboard']['page']  = '/plugins/monitoring/front/dashboard.php';
          }
          $rule_check = array('PluginMonitoringComponentscatalog_rule','isThisItemCheckRule');
          $rule_check_networkport = array('PluginMonitoringComponentscatalog_rule', 'isThisItemCheckRuleNetworkport');
-         $PLUGIN_HOOKS['item_add']['monitoring'] = 
+         $PLUGIN_HOOKS['item_add']['monitoring'] =
                                  array('Computer'         => $rule_check,
                                        'NetworkEquipment' => $rule_check,
                                        'Printer'          => $rule_check,
@@ -196,7 +245,7 @@ function plugin_init_monitoring() {
                                              array('PluginMonitoringComponentscatalog_rule','getItemsDynamicly'),
                                        'PluginMonitoringComponentscatalog_Host' =>
                                              array('PluginMonitoringHost','addHost'));
-         $PLUGIN_HOOKS['item_update']['monitoring'] = 
+         $PLUGIN_HOOKS['item_update']['monitoring'] =
                                  array('Computer'         => $rule_check,
                                        'NetworkEquipment' => $rule_check,
                                        'Printer'          => $rule_check,
@@ -206,12 +255,17 @@ function plugin_init_monitoring() {
                                              array('PluginMonitoringComponentscatalog','replayRulesCatalog'),
                                        'PluginMonitoringComponentscatalog_rule' =>
                                              array('PluginMonitoringComponentscatalog_rule','getItemsDynamicly'));
-         $PLUGIN_HOOKS['item_purge']['monitoring'] = 
+         $PLUGIN_HOOKS['pre_item_update']['monitoring'] =
+                                 array('PluginMonitoringHostdailycounter' =>
+                                             array('PluginMonitoringHostdailycounter','pre_item_update')
+                                 );
+         $PLUGIN_HOOKS['item_purge']['monitoring'] =
                                  array('Computer'         => $rule_check,
                                        'NetworkEquipment' => $rule_check,
                                        'Printer'          => $rule_check,
                                        'Peripheral'       => $rule_check,
                                        'Phone'            => $rule_check,
+                                       'NetworkPort'      => array('PluginMonitoringNetworkport', 'deleteNetworkPort'),
                                        'PluginMonitoringNetworkport' => $rule_check_networkport,
                                        'PluginMonitoringComponentscatalog_rule' =>
                                              array('PluginMonitoringComponentscatalog_rule','getItemsDynamicly'),
@@ -224,12 +278,11 @@ function plugin_init_monitoring() {
 
          if (!isset($_SESSION['glpi_plugin_monitoring']['_refresh'])) {
             $_SESSION['glpi_plugin_monitoring']['_refresh'] = '60';
-            
          }
 //      }
 
       $PLUGIN_HOOKS['webservices']['monitoring'] = 'plugin_monitoring_registerMethods';
-      
+
    }
    return $PLUGIN_HOOKS;
 }
